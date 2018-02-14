@@ -13,9 +13,9 @@
 	var ballSpeedY = 10;
 	
 	//Paddle positioning
-	const PADDLE_HEIGHT = 100;
-	const PADDLE_WIDTH = 10;
-	var paddle1Y = 295;
+	const PADDLE_HEIGHT = 10;
+	const PADDLE_WIDTH = 100;
+	var paddle1X = 295;
 	var paddle2Y = 250;
 	
 	//Scores
@@ -54,7 +54,7 @@
 		canvas.addEventListener('mousemove', 
 								function(evt){
 									var mousePos = calMousePos(evt);
-									paddle1Y = mousePos.y-50;
+									paddle1X = mousePos.x-50;
 								})
 								
 		canvas.addEventListener('mousedown', handleMouseClick)
@@ -129,7 +129,7 @@
 			return;
 		}
 		
-		colorRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');							//Paddle 1
+		colorRect(paddle1X, 590, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');							//Paddle 1
 		colorRect(canvas.width-PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');	//Paddle 2
 		drawNet();
 		colorCircle(ballX, ballY, 5,' white'); 													//Ball
