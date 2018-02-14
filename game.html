@@ -17,11 +17,17 @@
 	const PADDLE_WIDTH = 100;
 	var paddle1X = 295;
 	
-	//Bricks positioning
+	//Score / Lives 
+	var lives =3;
+	var showGameOver = false;
+
+	
+	//Bricks positioning -------------------------------------------------------------------------------------------------------------------
 	const BRICK_HEIGHT = 20;
 	const BRICK_WIDTH = 100;
 	var brickArray = [[0,0],[100,0],[200,0],[300,0],[400,0],[500,0],[600,0],[700,0],[800,0]];
 	
+	//Event listeners -------------------------------------------------------------------------------------------------------------------
 	function calMousePos(evt){
 		var rect = canvas.getBoundingClientRect();
 		var root = document.documentElement;
@@ -32,6 +38,15 @@
 		return { x:mouseX, y:mouseY };
 	}
 	
+	function handleMouseClick(evt){
+		if(showGameOver){
+			lives = 3;
+			showGameOver=false;
+			console.log("reached")
+		}
+	}
+	
+	//Onload function -------------------------------------------------------------------------------------------------------------------
 	window.onload = function(){
 		canvas = document.getElementById('gameCanvas');
 		canvasContext = canvas.getContext('2d');	
@@ -47,36 +62,41 @@
 									var mousePos = calMousePos(evt);
 									paddle1X = mousePos.x-50;
 								})
+		canvas.addEventListener('mousedown', handleMouseClick)
 	}
 	
-	function ballReset(){	
+	function ballReset(){
+		if(lives==0) showGameOver=true;
+		
 		ballY = canvas.height/2;
 		ballSpeedX = 0;
 	}
 	
 	function moveEverything(){
+		if(showGameOver) return;
 		ballX += ballSpeedX;
 		ballY += ballSpeedY;
 		
-		//Bottom Reflect
-		if (ballY > canvas.height) {
+		if (ballY > canvas.height) {																									//Bottom Reflect
 			if(( ballX > paddle1X) && (ballX < paddle1X+PADDLE_WIDTH)){
 				ballSpeedY *= -1;
 				
 				var deltaX = ballX - (paddle1X+PADDLE_WIDTH/2);
 				ballSpeedX = deltaX * 0.35;
-			} else ballReset(); 
+			} else {
+				lives--;
+				ballReset(); 
+			}
 		}	
 		
-		// Left/Right reflect
-		if (ballX < 0 || ballX > canvas.width) ballSpeedX *= -1;
+		if (ballX < 0 || ballX > canvas.width) ballSpeedX *= -1;																		// Left/Right reflect
 		
-		//Top Reflect
-		if(ballY < 0) ballSpeedY*=-1;
+		
+		if(ballY < 0) ballSpeedY*=-1;																									//Top Reflect
 		
 		for(i = 0; i < brickArray.length; i++){
 			if(ballY <= brickArray[i][1]+BRICK_HEIGHT && ((ballX > brickArray[i][0]) && (ballX < brickArray[i][0]+BRICK_WIDTH))) {
-			ballSpeedY*=-1
+			ballSpeedY*=-1;
 			brickArray.splice(i,1);
 			}
 		}
@@ -84,9 +104,19 @@
 	
 	
 	function drawEverything(){
-		//console.log(brickArray)
+	colorRect(0, 0, canvas.width, canvas.height, 'black');									//Background
+	
+		if(showGameOver) {
+			canvasContext.fillStyle = 'white';
+			canvasContext.fillText("Game Over", 350 ,100);
+			canvasContext.fillText("Try again?", 350 ,120);
+			canvasContext.fillText("Click to continue", 350 ,500);
+			return;
+		}
+		
 		colorRect(0, 0, canvas.width, canvas.height, 'black');									//Background
 		colorRect(paddle1X, 590, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');							//Paddle 1
+		canvasContext.fillText(lives, 100, 100);
 		colorCircle(ballX, ballY, 5,' white'); 													//Ball
 		for(i=0; i < brickArray.length; i++){ 													//Bricks
 			drawBrick(brickArray[i][0], brickArray[i][1]);
