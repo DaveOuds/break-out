@@ -17,6 +17,11 @@
 	const PADDLE_WIDTH = 100;
 	var paddle1X = 295;
 	
+	//Bricks positioning
+	const BRICK_HEIGHT = 20;
+	const BRICK_WIDTH = 100;
+	var brickArray = [[0,0],[100,0],[200,0],[300,0],[400,0],[500,0],[600,0],[700,0],[800,0]];
+	
 	function calMousePos(evt){
 		var rect = canvas.getBoundingClientRect();
 		var root = document.documentElement;
@@ -67,15 +72,34 @@
 		if (ballX < 0 || ballX > canvas.width) ballSpeedX *= -1;
 		
 		//Top Reflect
-		if(ballY < 0) ballSpeedY*=-1;		
+		if(ballY < 0) ballSpeedY*=-1;
+		
+		for(i = 0; i < brickArray.length; i++){
+			if(ballY <= brickArray[i][1]+BRICK_HEIGHT && ((ballX > brickArray[i][0]) && (ballX < brickArray[i][0]+BRICK_WIDTH))) {
+			ballSpeedY*=-1
+			brickArray.splice(i,1);
+			}
+		}
 	}
 	
 	
 	function drawEverything(){
-	console.log(ballY)
+		//console.log(brickArray)
 		colorRect(0, 0, canvas.width, canvas.height, 'black');									//Background
 		colorRect(paddle1X, 590, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');							//Paddle 1
 		colorCircle(ballX, ballY, 5,' white'); 													//Ball
+		for(i=0; i < brickArray.length; i++){ 													//Bricks
+			drawBrick(brickArray[i][0], brickArray[i][1]);
+		}
+	}
+	
+	function drawBrick (x, y){
+		colorRect(x, y, BRICK_WIDTH, BRICK_HEIGHT, 'red');
+		canvasContext.beginPath();
+		canvasContext.lineWidth="3";
+		canvasContext.strokeStyle="black";
+		canvasContext.rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
+		canvasContext.stroke();
 	}
 	
 	function colorRect(x, y, width, height, color){
@@ -88,6 +112,6 @@
 		canvasContext.beginPath();
 		canvasContext.arc(x, y, radius, 0, Math.PI*2, true);
 		canvasContext.fill();
-	}
+	}	
 </script>
 </html>
