@@ -5,6 +5,7 @@
 	//Canvas
 	var canvas;
 	var canvasContext;
+	var fps;
 	
 	//Ball positioning ---------------------------------------------------------------------------------------------------------------------
 	var ballX = 395;
@@ -42,6 +43,29 @@
 		 }
 	}
 	
+	//Power-ups ----------------------------------------------------------------------------------------------------------------------
+	var generatePowerUp = false;
+	var shield = false;
+	function checkForPowerUp(){
+		var x = Math.floor(Math.random() * 5); //20% to get a powerup when a brick breaks
+		if(x==0) generatePowerUp();
+	}
+	
+	function generatePowerUp(){
+		var whichPowerUp = Math.floor((Math.random() * 2)+1);
+		var powerUpTimer = 10*fps; //10 seconds
+		
+		switch(whichPowerUp){
+		case 1: //Bigger Panel
+			break;
+		case 2: //Extra Live
+			break;
+		case 3: //Extra Lives
+			lives++;
+			break;
+		}
+	}
+	
 	//Event listeners ----------------------------------------------------------------------------------------------------------------------
 	function calMousePos(evt){
 		var rect = canvas.getBoundingClientRect();
@@ -74,7 +98,7 @@
 		canvas = document.getElementById('gameCanvas');
 		canvasContext = canvas.getContext('2d');	
 		
-		var fps = 30;
+		fps = 30;
 		setInterval(function(){
 						drawEverything();
 						moveEverything();
