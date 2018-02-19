@@ -2,36 +2,52 @@
 <canvas id="gameCanvas" width="800" height="600">
 </canvas>
 <script>
-	//Canvas
+	//Canvas----------------------------------------------------------------------
 	var canvas;
 	var canvasContext;
 	var fps;
-	
-	//Ball positioning ---------------------------------------------------------------------------------------------------------------------
-	var ballX = 395;
-	var ballY = 295;
-	var ballSpeedX = 0;
-	var ballSpeedY = 10;
-	
-	//Paddle positioning -------------------------------------------------------------------------------------------------------------------
-	const PADDLE_HEIGHT = 10;
-	const PADDLE_WIDTH = 100;
-	var paddle1X = 295;
-	
-	//Score / Lives ------------------------------------------------------------------------------------------------------------------------
-	var score =0;
-	var lives =3;
-	var showGameOver = false;
-	var levelDone = false;
-	var level =1;
 
-	
-	//Bricks positioning -------------------------------------------------------------------------------------------------------------------
+	//Object declarations -----------------------------------------------------------
+	var ball = {
+		x : 395,
+		y : 295,
+		speedX : 0,
+		speedY : 10,
+		reset : function() {
+
+													if(player.lives==0) {
+														gameState.showGameOver=true;
+														console.log("REACHED")
+													}
+													this.y = canvas.height/2;
+													this.speedX = 0;
+												}
+	};
+
+	var player = {
+		score : 0,
+		lives : 3,
+		paddle : {x : 295, width : 100}
+	};
+
+	function Brick (x, y){
+		this.x = x;
+		this.y = y;
+	}
+
+	var gameState = {
+		showGameOver : false,
+		levelDone : false,
+		level :1,
+		highScore : 0
+	};
+
+	//Bricks positioning ---------------------------------------------------------
 	const BRICK_HEIGHT = 20;
 	const BRICK_WIDTH = 100;
 	//var brickArray = [[0,0],[100,0],[200,0],[300,0],[400,0],[500,0],[600,0],[700,0]];
 	var brickArray = [[400,0]]; //Test array
-	
+
 	function generateBrickArray(){
 		brickArray= [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]];
 		var brickArrayLength = Math.floor((Math.random() * 8)+1);
@@ -42,143 +58,116 @@
 			else i--;
 		 }
 	}
-	
-	//Power-ups ----------------------------------------------------------------------------------------------------------------------
-	var generatePowerUp = false;
-	var shield = false;
-	function checkForPowerUp(){
-		var x = Math.floor(Math.random() * 5); //20% to get a powerup when a brick breaks
-		if(x==0) generatePowerUp();
-	}
-	
-	function generatePowerUp(){
-		var whichPowerUp = Math.floor((Math.random() * 2)+1);
-		var powerUpTimer = 10*fps; //10 seconds
-		
-		switch(whichPowerUp){
-		case 1: //Bigger Panel
-			break;
-		case 2: //Extra Live
-			break;
-		case 3: //Extra Lives
-			lives++;
-			break;
-		}
-	}
-	
-	//Event listeners ----------------------------------------------------------------------------------------------------------------------
+
+	//Event listeners ------------------------------------------------------------
 	function calMousePos(evt){
 		var rect = canvas.getBoundingClientRect();
 		var root = document.documentElement;
-		
+
 		var mouseX = evt.clientX - rect.left - root.scrollLeft;
 		var mouseY = evt.clientY - rect.top - root.scrollTop;
-		
+
 		return { x:mouseX, y:mouseY };
 	}
-	
+
 	function handleMouseClick(evt){
-		if(showGameOver){
-			score = 0;
-			lives = 3;
-			level = 0;
-			ballSpeedX = 0;
-			ballSpeedY = 10;
-			showGameOver=false;
+		if(gameState.showGameOver){
+			player.score = 0;
+			player.lives = 3;
+			gameState.level = 0;
+			ball.speedX = 0;
+			ball.speedY = 10;
+			gameState.showGameOver=false;
 		} else {
-			ballReset()
-			levelDone=false;
-			ballSpeedX = 0;
-			ballSpeedY += 5;
+			ball.reset();
+			gameState.levelDone=false;
+			ball.speedX = 0;
+			ball.speedY += 5;
 		}
 	}
-	
-	//Onload function ---------------------------------------------------------------------------------------------------------------------
+
+	//Onload function ------------------------------------------------------------
 	window.onload = function(){
 		canvas = document.getElementById('gameCanvas');
-		canvasContext = canvas.getContext('2d');	
-		
+		canvasContext = canvas.getContext('2d');
+
+
+
 		fps = 30;
 		setInterval(function(){
 						drawEverything();
 						moveEverything();
 					}, 1000/fps);
-					
-		canvas.addEventListener('mousemove', 
+
+		canvas.addEventListener('mousemove',
 								function(evt){
 									var mousePos = calMousePos(evt);
-									paddle1X = mousePos.x-50;
+									player.paddle.x = mousePos.x-50;
 								})
 		canvas.addEventListener('mousedown', handleMouseClick)
 	}
-	
-	//Move functions ------------------------------------------------------------------------------------------------------------------------
-	function ballReset(){
-		if(lives==0) showGameOver=true;
-		
-		ballY = canvas.height/2;
-		ballSpeedX = 0;
-	}
-	
+
+	//Move functions -------------------------------------------------------------
+
 	function moveEverything(){
-		if(showGameOver || levelDone) return;
-		ballX += ballSpeedX;
-		ballY += ballSpeedY;
-		
-		if (ballY > canvas.height) {																// Bottom Reflect
-			if(( ballX > paddle1X) && (ballX < paddle1X+PADDLE_WIDTH)){
-				ballSpeedY *= -1;
-				
-				var deltaX = ballX - (paddle1X+PADDLE_WIDTH/2);
-				ballSpeedX = deltaX * 0.35;
+		if(gameState.showGameOver || gameState.levelDone) return;
+		ball.x += ball.speedX;
+		ball.y += ball.speedY;
+
+		if (ball.y > canvas.height) {																								// Bottom Reflect
+			if(( ball.x > player.paddle.x) && (ball.x < player.paddle.x+player.paddle.width)){
+				ball.speedY *= -1;
+
+				var deltaX = ball.x - (player.paddle.x+player.paddle.width/2);
+				ball.speedX = deltaX * 0.35;
 			} else {
-				lives--;
-				ballReset(); 
+				player.lives--;
+				ball.reset();
 			}
-		}	
-		
-		if (ballX < 0 || ballX > canvas.width) ballSpeedX *= -1;									// Left/Right reflect
-		
-		if(ballY < 0) ballSpeedY*=-1;																// Top Reflect
-		
+		}
+
+		if (ball.x < 0 || ball.x > canvas.width) ball.speedX *= -1;									// Left/Right reflect
+
+		if(ball.y < 0) ball.speedY*=-1;																							// Top Reflect
+
 		for(i = 0; i < brickArray.length; i++){
-			if(ballY <= brickArray[i][1]+BRICK_HEIGHT && ((ballX > brickArray[i][0]) && (ballX < brickArray[i][0]+BRICK_WIDTH))) {
-				ballSpeedY*=-1;
+			if(ball.y <= brickArray[i][1]+BRICK_HEIGHT && ((ball.x > brickArray[i][0]) && (ball.x < brickArray[i][0]+BRICK_WIDTH))) {
+				ball.speedY*=-1;
 				brickArray.splice(i,1);
-				score+=100;
+				player.score+=100;
 				if(brickArray.length == 0 ) {
-					levelDone=true;
-					level++;
+					gameState.levelDone=true;
+					gameState.level++;
 				}
 			}
 		}
 	}
-	
-	//Draw functions -----------------------------------------------------------------------------------------------------------------------
+
+	//Draw functions -------------------------------------------------------------
 	function drawEverything(){
-	colorRect(0, 0, canvas.width, canvas.height, 'black');									//Background
-	
-		if(showGameOver) {
+	colorRect(0, 0, canvas.width, canvas.height, 'black');												//Background
+
+		if(gameState.showGameOver) {
 			showScreen("Game Over", "Try again?", "Click to continue")
 			return;
 		}
-		
-		if(levelDone) {
-			showScreen("Level Complete", "Ready for level " +level +"?", "Click to continue")
+
+		if(gameState.levelDone) {
+			showScreen("Level Complete", "Ready for level " +gameState.level +"?", "Click to continue")
 			generateBrickArray()
 			return;
 		}
-		
-		colorRect(0, 0, canvas.width, canvas.height, 'black');									//Background
-		colorRect(paddle1X, 590, PADDLE_WIDTH, PADDLE_HEIGHT, 'white');							//Paddle 1
-		canvasContext.fillText(lives, 100, 100);
-		canvasContext.fillText(score, 500, 100);
-		colorCircle(ballX, ballY, 5,' white'); 													//Ball
-		for(i=0; i < brickArray.length; i++){ 													//Bricks
+
+		colorRect(0, 0, canvas.width, canvas.height, 'black');											//Background
+		colorRect(player.paddle.x, 590, player.paddle.width, 10, 'white');							//Paddle 1
+		canvasContext.fillText(player.lives, 100, 100);
+		canvasContext.fillText(player.score, 500, 100);
+		colorCircle(ball.x, ball.y, 5,' white'); 																			//Ball
+		for(i=0; i < brickArray.length; i++){ 																			//Bricks
 			drawBrick(brickArray[i][0], brickArray[i][1]);
 		}
 	}
-	
+
 	function drawBrick (x, y){
 		colorRect(x, y, BRICK_WIDTH, BRICK_HEIGHT, 'red');
 		canvasContext.beginPath();
@@ -187,12 +176,12 @@
 		canvasContext.rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
 		canvasContext.stroke();
 	}
-	
+
 	function colorRect(x, y, width, height, color){
 		canvasContext.fillStyle = color;
 		canvasContext.fillRect(x, y, width, height);
 	}
-	
+
 	function colorCircle(x, y, radius, color){
 		canvasContext.fillStyle = color;
 		canvasContext.beginPath();
