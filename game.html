@@ -7,20 +7,17 @@
 	var canvasContext;
 	var fps;
 
-	//Object declarations -----------------------------------------------------------
+	//Object declarations --------------------------------------------------------
 	var ball = {
 		x : 395,
 		y : 295,
 		speedX : 0,
 		speedY : 10,
-		reset : function() {
-
-													if(player.lives==0) {
-														gameState.showGameOver=true;
-														console.log("REACHED")
-													}
-													this.y = canvas.height/2;
-													this.speedX = 0;
+		reset : function() { 	if(player.lives==0) gameState.showGameOver=true;
+													ball.y = canvas.height/2;
+													ball.x = canvas.width/2;
+													ball.speedX = 0;
+													if(ball.speedY < 0) ball.speedY *=-1;
 												}
 	};
 
@@ -30,16 +27,33 @@
 		paddle : {x : 295, width : 100}
 	};
 
-	function Brick (x, y){
-		this.x = x;
-		this.y = y;
+	function PowerUp (whichPowerUp, xPos){
+		this.whichPowerUp = whichPowerUp;
+		this.xPos = xPos;
 	}
 
 	var gameState = {
 		showGameOver : false,
 		levelDone : false,
 		level :1,
-		highScore : 0
+		highScore : 0,
+		gameOver : function () {
+														if(player.score > gameState.highScore) gameState.highScore = player.score;
+														player.score = 0;
+														player.lives = 3;
+														gameState.level = 1;
+														gameState.showGameOver=false;
+														ball.speedY = 10;
+														generateBrickArray();
+													},
+		nextLevel : function () {
+															ball.reset();
+															gameState.levelDone=false;
+															ball.speedX = 0;
+															ball.speedY += 3;
+															generateBrickArray();
+
+														}
 	};
 
 	//Bricks positioning & generation---------------------------------------------
@@ -49,14 +63,19 @@
 	var brickArray = [[400,0]]; //Test array
 
 	function generateBrickArray(){
-		brickArray= [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]];
-		var brickArrayLength = Math.floor((Math.random() * 8)+1);
-		for(var i=0; i < brickArrayLength;i++){
-			var brickArrayPosition = Math.floor(Math.random() * brickArrayLength);
-			var brickPosition= brickArrayPosition*100;
-			if( (brickArray[brickArrayPosition] != [0,1])) brickArray[brickArrayPosition] =[brickPosition,0];
-			else i--;
-		 }
+		if(gameState.level==1){
+			brickArray = [[400,0]]; // [[0,0],[100,0],[200,0],[300,0],[400,0],[500,0],[600,0],[700,0]];
+		} else {
+			var brickArrayLength = Math.floor((Math.random() * 8)+1);
+			for(var i=0; i < brickArrayLength;i++){
+				var brickPosition = Math.floor(Math.random() * brickArrayLength)*100;
+
+				if( brickArray.indexOf([brickPosition,0]!=-1)){
+					brickArray.push([brickPosition,0]);
+				} else i--;
+			 }
+		}
+		console.log(brickArray)
 	}
 
 	//Event listeners ------------------------------------------------------------
@@ -72,17 +91,9 @@
 
 	function handleMouseClick(evt){
 		if(gameState.showGameOver){
-			player.score = 0;
-			player.lives = 3;
-			gameState.level = 0;
-			ball.speedX = 0;
-			ball.speedY = 10;
-			gameState.showGameOver=false;
+			gameState.gameOver();
 		} else if (gameState.levelDone){
-			ball.reset();
-			gameState.levelDone=false;
-			ball.speedX = 0;
-			ball.speedY += 5;
+			gameState.nextLevel();
 		}
 	}
 
@@ -90,8 +101,6 @@
 	window.onload = function(){
 		canvas = document.getElementById('gameCanvas');
 		canvasContext = canvas.getContext('2d');
-
-
 
 		fps = 30;
 		setInterval(function(){
@@ -107,14 +116,15 @@
 		canvas.addEventListener('mousedown', handleMouseClick)
 	}
 
-	//Move functions -------------------------------------------------------------
-
+	//Move function---------------------------------------------------------------
 	function moveEverything(){
+		console.log("level", gameState.level)
+
 		if(gameState.showGameOver || gameState.levelDone) return;
 		ball.x += ball.speedX;
 		ball.y += ball.speedY;
 
-		if (ball.y > canvas.height) {																								// Bottom Reflect
+		if (ball.y > canvas.height) {																								// Paddle Reflect
 			if(( ball.x > player.paddle.x) && (ball.x < player.paddle.x+player.paddle.width)){
 				ball.speedY *= -1;
 
@@ -130,9 +140,10 @@
 
 		if(ball.y < 0) ball.speedY*=-1;																							// Top Reflect
 
-		for(i = 0; i < brickArray.length; i++){
+		for(i = 0; i < brickArray.length; i++){																			//Check if a brick is hit
 			if(ball.y <= brickArray[i][1]+BRICK_HEIGHT && ((ball.x > brickArray[i][0]) && (ball.x < brickArray[i][0]+BRICK_WIDTH))) {
 				ball.speedY*=-1;
+				checkAndGenPowerup(brickArray[i][1]+50);
 				brickArray.splice(i,1);
 				player.score+=100;
 				if(brickArray.length == 0 ) {
@@ -148,21 +159,22 @@
 	colorRect(0, 0, canvas.width, canvas.height, 'black');												//Background
 
 		if(gameState.showGameOver) {
-			showScreen("Game Over", "Try again?", "Click to continue")
+			drawScreen("Game Over", "Try again?", "Click to continue")
 			return;
 		}
 
 		if(gameState.levelDone) {
-			showScreen("Level Complete", "Ready for level " +gameState.level +"?", "Click to continue")
-			generateBrickArray()
+			drawScreen("Level Complete", "Ready for level " +gameState.level +"?", "Click to continue")
 			return;
 		}
 
 		colorRect(0, 0, canvas.width, canvas.height, 'black');											//Background
-		colorRect(player.paddle.x, 590, player.paddle.width, 10, 'white');							//Paddle 1
+		colorRect(player.paddle.x, 590, player.paddle.width, 10, 'white');					//Paddle 1
 		canvasContext.fillText(player.lives, 100, 100);
-		canvasContext.fillText(player.score, 500, 100);
-		colorCircle(ball.x, ball.y, 5,' white'); 																			//Ball
+		canvasContext.fillText(player.score, 700, 100);
+		canvasContext.fillText(gameState.highScore, 400, 100);
+
+		colorCircle(ball.x, ball.y, 5,' white'); 																		//Ball
 		for(i=0; i < brickArray.length; i++){ 																			//Bricks
 			drawBrick(brickArray[i][0], brickArray[i][1]);
 		}
@@ -189,11 +201,20 @@
 		canvasContext.fill();
 	}
 
-	function showScreen(message1, message2, message3){
+	function drawScreen(message1, message2, message3){
 			canvasContext.fillStyle = 'white';
 			canvasContext.fillText(message1, 350 ,100);
 			canvasContext.fillText(message2, 350 ,120);
 			canvasContext.fillText(message3, 350 ,500);
 	}
+
+	function checkAndGenPowerup(xPos){
+		var x = Math.floor(Math.random() * 5); 																			//20% to get a powerup when a brick breaks
+		if(x==0){
+			var whichPowerUp = Math.floor(Math.random() * 5);																			//Generate which powerup
+			PowerUp(whichPowerUp,xPos);
+		}
+	}
+
 </script>
 </html>
