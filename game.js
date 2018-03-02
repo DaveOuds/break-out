@@ -23,7 +23,7 @@ var ballData = {
     this.x = canvas.width / 2;
     this.speedX = 0;
     if (this.speedY < 0) this.speedY *= -1;
-    extraBalls=[];
+    extraBalls = [];
     powerUpArray = [];
   }
 };
@@ -62,11 +62,10 @@ var gameState = {
     generateBrickArray();
   },
   nextLevel: function() {
-    console.log("reached");
-    ball.reset();l
-    this.levelDone = false;
+    ball.reset();
     ball.speedX = 0;
     ball.speedY += 3;
+    this.level++;
     generateBrickArray();
   }
 };
@@ -96,9 +95,9 @@ var powerUp = {
   activate: function() {
     switch (this.whichPowerUp) {
       case 1: //extra ball
-        if(ball.speedY > 0 ) extraBalls.push(ballData.create(395, 295, 0, ball.speedY));
+        if (ball.speedY > 0) extraBalls.push(ballData.create(395, 295, 0, ball.speedY));
         else extraBalls.push(ballData.create(395, 295, 0, -ball.speedY));
-        break;l
+        break;
       case 2: //Extra live
         player.lives++;
         break;
@@ -132,31 +131,23 @@ function checkAndGenPowerup(xPos) {
 //Bricks positioning & generation---------------------------------------------
 const BRICK_HEIGHT = 20;
 const BRICK_WIDTH = 100;
-var brickArray = [] ;
+//var brickArray = [[0, 0], [100, 0], [200, 0], [300, 0], [400, 0], [500, 0], [600, 0], [700, 0]];
+var brickArray = [true,false,false,false,false,false,false];//true,,true,true,true,true,true];
 
 function generateBrickArray() {
   if (game.level == 1) {
-    brickArray = [
-      [0, 0],
-      [100, 0],
-      [200, 0],
-      [300, 0],
-      [400, 0],
-      [500, 0],
-      [600, 0],
-      [700, 0]
-    ];
+      brickArray = [true,false,false,false,false,false,false];
   } else {
-    brickArray = brickArray.map()
+    console.log("reached")
+    brickArray = brickArray.map(brick => {
+      var x =Math.random() >= 0.5;
+      console.log(x)
+      return x;
+    });
   }
+  console.log(brickArray);
 }
 
-function generateBrick() {
-  var chance = Math.floor((Math.random() * 3) + 1);
-  if (chance == 3) {
-
-  }
-}
 
 //Event listeners ------------------------------------------------------------
 function calMousePos(evt) {
@@ -174,9 +165,9 @@ function calMousePos(evt) {
 
 function handleMouseClick(evt) {
   if (game.showGameOver) {
-    game.showGameOver=false;
+    game.showGameOver = false;
   } else if (game.levelDone) {
-    game.levelDone=false;;
+    game.levelDone = false;;
   }
 }
 
@@ -225,15 +216,16 @@ function moveEverything() {
   if (ball.y < 0) ball.speedY *= -1; // Top Reflect
 
   for (i = 0; i < brickArray.length; i++) { //Check if a brick is hit
-    if (ball.y <= brickArray[i][1] + BRICK_HEIGHT && ((ball.x > brickArray[i][0]) && (ball.x < brickArray[i][0] + BRICK_WIDTH))) {
-      ball.speedY *= -1;
-      checkAndGenPowerup(brickArray[i][0] + 50);
-      brickArray.splice(i, 1);
-      player.score += 100;
-      if (brickArray.length == 0) {
-        game.levelDone = true;
-        game.nextLevel();
-        game.level++;
+    if(brickArray[i]){
+      if (ball.y <= BRICK_HEIGHT && ((ball.x > i*100) && (ball.x < i*100 + BRICK_WIDTH))) {
+        ball.speedY *= -1;
+        checkAndGenPowerup(i*100 + 50);
+        brickArray[i] =false;
+        player.score += 100;
+        if(brickArray.every(function (x){return !x;})){
+          game.levelDone = true;
+          game.nextLevel();
+        }
       }
     }
   }
@@ -250,7 +242,7 @@ function moveEverything() {
     }
   }
 
-  // Extra ball hadnling -----------------------------------------------------
+  // Extra ball handling -----------------------------------------------------
   for (var i = 0; i < extraBalls.length; i++) {
     extraBalls[i].x += extraBalls[i].speedX;
     extraBalls[i].y += extraBalls[i].speedY;
@@ -269,15 +261,14 @@ function moveEverything() {
     if (extraBalls[i].y < 0) extraBalls[i].speedY *= -1; // Top Reflect
 
     for (index = 0; index < brickArray.length; index++) { //Check if a brick is hit
-      if (extraBalls[i].y <= brickArray[index][1] + BRICK_HEIGHT && ((extraBalls[i].x > brickArray[index][0]) && (extraBalls[i].x < brickArray[index][0] + BRICK_WIDTH))) {
+      if (extraBalls[i].y <= BRICK_HEIGHT && ((extraBalls[i].x > i*100) && (extraBalls[i].x < i*100 + BRICK_WIDTH))) {
         extraBalls[i].speedY *= -1;
-        checkAndGenPowerup(brickArray[index][0] + 50);
-        brickArray.splice(index, 1);
+        checkAndGenPowerup(i*100 + 50);
+        brickArray[i] =false;
         player.score += 100;
-        if (brickArray.length == 0) {
+        if(brickArray.every(function (x){return !x;})){
           game.levelDone = true;
           game.nextLevel();
-          game.level++;
         }
       }
     }
@@ -311,14 +302,15 @@ function drawEverything() {
 
 function drawBricks() {
   for (i = 0; i < brickArray.length; i++) { //Bricks
-    var x = brickArray[i][0]
-    var y = brickArray[i][1]
-    colorRect(x, y, BRICK_WIDTH, BRICK_HEIGHT, 'red');
-    canvasContext.beginPath();
-    canvasContext.lineWidth = "3";
-    canvasContext.strokeStyle = "black";
-    canvasContext.rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
-    canvasContext.stroke();
+    if(brickArray[i]){
+      colorRect(i*100, 0, BRICK_WIDTH, BRICK_HEIGHT, 'red');
+      canvasContext.beginPath();
+      canvasContext.lineWidth = "3";
+      canvasContext.strokeStyle = "black";
+      canvasContext.rect(i*100, 0, BRICK_WIDTH, BRICK_HEIGHT)
+      canvasContext.stroke();
+    }
+
   }
 }
 
